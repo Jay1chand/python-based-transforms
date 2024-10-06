@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laplace Transform Visualization</title>
+    <!-- Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 80%;
+            margin-top: 140px;
+            /* max-width: 800px; */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .input-container {
+            width: 80%;
+            display: flex;
+            /* justify-content: space-between; */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .input-container label {
+            margin-left: 100px;
+            font-weight: bold;
+            margin-right: 10px;
+            color: #666;
+        }
+        .input-container input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+        .input-container button {
+            padding: 8px 20px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .plots-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .plot {
+            
+            width: 90%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Laplace Transform Visualization</h1>
+        <div class="input-container">
+            <label for="function_input">Input Function f(t):</label>
+            <input type="text" id="function_input" name="function_input" value="sin(t) * heaviside(t,0) + cos(t) * heaviside(t - 1, 0)">
+            <button onclick="updatePlots()">Update Plot</button>
+        </div>
+        <div class="plots-container">
+            <div id="input-plot" class="plot"></div>
+            <div id="laplace-plot" class="plot"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript code -->
+    <script type="text/javascript">
+        // Function to update plots based on function expression
+        function updatePlots() {
+            const functionExpression = document.getElementById('function_input').value;
+
+            // AJAX request to Flask backend
+            fetch('/update_plot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ functionExpression: functionExpression })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const { t_vals, f_vals, s_vals, F_s_vals_real, F_s_vals_imag } = data;
+
+                // Update Input Function plot
+                const inputPlotData = [{
+                    x: t_vals,
+                    y: f_vals,
+                    mode: 'lines',
+                    line: { color: '#007bff' },
+                    name: `f(t) = ${functionExpression}`
+                }];
+                const inputPlotLayout = {
+                    title: 'Input Function f(t)',
+                    xaxis: { title: 't', linecolor: '#666' },
+                    yaxis: { title: 'f(t)', linecolor: '#666' },
+                    margin: { t: 50, b: 50 },
+                    plot_bgcolor: '#fff'
+                };
+                Plotly.newPlot('input-plot', inputPlotData, inputPlotLayout);
+
+                // Update Laplace Transform plot
+                const laplacePlotData = [{
+                    x: s_vals,
+                    y: F_s_vals_real,
+                    mode: 'lines',
+                    line: { color: '#17a2b8' },
+                    name: 'Re(F(s))'
+                }, {
+                    x: s_vals,
+                    y: F_s_vals_imag,
+                    mode: 'lines',
+                    line: { color: '#ffc107', dash: 'dash' },
+                    name: 'Im(F(s))'
+                }];
+                const laplacePlotLayout = {
+                    title: 'Laplace Transform of f(t)',
+                    xaxis: { title: 's', linecolor: '#666' },
+                    yaxis: { title: 'F(s)', linecolor: '#666' },
+                    margin: { t: 50, b: 50 },
+                    plot_bgcolor: '#fff'
+                };
+                Plotly.newPlot('laplace-plot', laplacePlotData, laplacePlotLayout);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Initial plot setup
+        updatePlots();
+    </script>
+</body>
+</html>
